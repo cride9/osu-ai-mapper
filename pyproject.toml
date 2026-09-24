@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osu-ai-mapper"
+version = "0.1.0"
+description = "Train a compact, local osu!standard mapper from audio and beatmaps"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "torch==2.8.0", "numpy==2.2.6", "scipy==1.15.3",
+  "imageio-ffmpeg==0.6.0", "rosu-pp-py==3.1.0",
+  "gradio==5.49.1", "matplotlib==3.10.3", "soundfile==0.13.1"
+]
+
+[project.optional-dependencies]
+test = ["pytest==8.4.2"]
+
+[project.scripts]
+osumapper = "osumapper.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["osumapper*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
