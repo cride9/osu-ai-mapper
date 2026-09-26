@@ -1,4 +1,58 @@
-# Local osu! AI mapper
+# osu! AI Mapper V2 és V1
+
+A V2 helyben tanítható osu!standard mapper ismeretlen zenékhez. Saját audióencodert és két Transformer-méretet tartalmaz; minden súly véletlen inicializálásból indul. A V1 külön programként megmarad. **A V2 jelenleg kód és tanítási folyamat, kész V2 modell még nincs.** Az elkészült mapok ritmusát, változatosságát és játékélményét tanítás után valódi osu!stable playtesttel kell ellenőrizni.
+
+## V2: gyors indulás ezen a gépen
+
+1. Indítsd a [StartV2.cmd](StartV2.cmd) fájlt. A V2 felület címe <http://127.0.0.1:7861>; a V1 régi címe 7860 volt. Másik gépen előbb futtasd az `Install.ps1` fájlt.
+2. A **Library** lapon a forrásadatbázis: `C:\Users\cride\Documents\Github\osu_dataset\osu_dataset.sqlite`, a fájlgyökér: `C:\Users\cride\Documents\Github\osu_dataset\osu_files`. Nyomd meg az előkészítés gombját. Az import csak az SQL `dataset` táblájának kiválasztott sorait használja. A `_osz` archívumokból közvetlenül olvas, nem bontja ki az összeset és nem írja át az eredeti SQL-t. Az első archívumindexelés sokáig tarthat; megszakítva folytatható.
+3. Új teljes gyűjteményhez használd a `local-data-v2/dataset-full` mappát. Az előkészítés minden SQL-jelöltet megvizsgál, az összes használható letöltött map bekerül. A **4 GiB** keret a tömörített, cserélhető map/audio-cache-é, nem maplimit. A riport mutatja a teljes és használható jelölteket csillagsávonként, a kizárásokat és a 90/5/5 zenecsoportos splitet. A korábbi, korlátozott dataset és futások változatlanul használhatók a régi útvonalukkal.
+4. A **Training** lapon te indítod a memóriapróbát, az audióencoder tanítását, a feature-cache építését és a mapper tanítását. A program önállóan nem indít tréninget. A hétnapos, 168 órás ütemezés is külön gomb mögött van.
+5. Audiótanítás után a teljes dataset saját `best.pt` encoderével állítsd be a feature-cache-t. A keret alapból **8 GiB**, a szabadhely-tartalék **8 GiB**. Teljes módban minden felvétel jogosult marad: a hiányzó feature-ök CPU-n készülnek, a régebbiek kieshetnek és később újraszámolódnak. Ez jelentős adatvárakozást okozhat, különösen az első körben. A gomb itt a cache használatát készíti elő, nem számolja előre az egész gyűjteményt.
+6. A mapperhez válaszd a `v2-s` modellt. A `v2-l` csak sikeres 6 GB-os memóriapróba és nyolcórás összehasonlítás után érdemes. Fizikai batch 1-ről indulj; a benchmark alapján lehet 2/4/8-ra váltani. A VRAM-szabály 4,8 GiB PyTorch-foglalás és legalább 0,75 GiB valódi eszközoldali szabad memória. A Windows shared GPU memory nem számít szabad VRAM-nak.
+7. A **Generate** lapon egy saját tanított mapper `best.pt` fájlja kell. A folytatáshoz a tanítási futás **`last.pt`** fájlját válaszd, ugyanazzal a run mappával. A `best.pt` generálásra és értékelésre szolgál.
+
+A `C:\Users\cride\Documents\Github\osu\_dataset` útvonal a felméréskor nem létezett; az itt látható `osu_dataset` mappát használtam forrásként. A felméréskor a fájlmappában körülbelül 252 GiB `.osz` archívum és 52 GiB már kibontott audio volt, a C: meghajtón pedig körülbelül 26,7 GiB szabad hely. Az archívumok többsége még nem volt kibontva. **Ne bontsd ki egyszerre az összeset.** Az archívumok és eredeti mapok törlését a V2 nem végzi automatikusan.
+
+## V2 parancsok
+
+A projekt mappájában, aktivált `.venv` mellett vagy a telepített `osumapper-v2` paranccsal:
+
+```powershell
+python -m osumapper.v2 prepare --source-db 'C:\Users\cride\Documents\Github\osu_dataset\osu_dataset.sqlite' --files-root 'C:\Users\cride\Documents\Github\osu_dataset\osu_files' --data local-data-v2\dataset-full --version v2 --max-metadata-gib 4
+python -m osumapper.v2 benchmark --output local-data-v2\benchmark --compare v2-s,v2-l --batches 1,2
+python -m osumapper.v2 train --stage audio --model v2-s --data local-data-v2\dataset-full --run local-data-v2\runs\audio-full --hours 24 --batch-size 1
+python -m osumapper.v2 features local-data-v2\runs\audio-full\best.pt --data local-data-v2\dataset-full --max-gib 8 --min-free-gib 8
+python -m osumapper.v2 train --stage mapper --model v2-s --data local-data-v2\dataset-full --run local-data-v2\runs\mapper-full --hours 120 --batch-size 1
+python -m osumapper.v2 train --stage mapper --model v2-s --data local-data-v2\dataset-full --run local-data-v2\runs\mapper-full --resume local-data-v2\runs\mapper-full\last.pt --hours 168
+python -m osumapper.v2 generate local-data-v2\runs\mapper-full\best.pt 'C:\Music\song.mp3' --output local-data-v2\generated --stars 5 --preset Auto
+python -m osumapper.v2 evaluate local-data-v2\runs\mapper-full\best.pt --suite full --split test --count 32
+python -m osumapper.v2 evaluate local-data-v2\runs\mapper-full\best.pt --suite styles --split test --count 4
+python -m osumapper.v2 ui --home local-data-v2 --port 7861
+```
+
+Az `experiment --data local-data-v2\dataset-full --run local-data-v2\runs\experiment` külön kérésre futtatja a 2 óra előpróbát, 24 óra audiófázist, két 8 órás modellpróbát, 120 óra folytatást és 6 óra értékelést. A letöltés és előkészítés ezen kívül esik. A kísérlet ellenőrzi a memóriát és az overfitet, mielőtt hosszú tanítást indít. Később ugyanazzal a run mappával folytatható.
+
+## V2 felépítés és korlátok
+
+Az audio 22,05 kHz mono, 128 mel sávval és körülbelül 10 ms képközzel; a kezdő csend megmarad. A 64 másodperces saját reziduális konvolúciós és Conformer encoder külön tanul beat/downbeat jelzést és maszkolt mel-helyreállítást. A tanult encoder utána befagy. A mapper 64 másodperc részletes audiót, a teljes dalból legfeljebb 512 összefoglalót, 32 másodperc objektumelőzményt és szakaszstatisztikákat kap. Egyszerre 16 másodpercnyi mapot ír, legfeljebb 2048 decoder tokennel; a teljes objektumokat viszi tovább a határokon.
+
+A V2-S 80 369 028 paraméter körüli, ebből a közös audióencoder 39 445 572. A V2-L körülbelül 117 348 612 paraméter a közös encoderrel együtt. A decoder RMSNormot, QK-normalizálást, RoPE-t, SwiGLU-t, grouped-query attentiont és natív PyTorch SDPA-t használ. Ezek sebességelőnyét ezen a Quadrón a felületi benchmarknak kell megmérnie; MoE, MLA és egyedi CUDA-kernel nincs.
+
+Az eredeti `.osu`/audio és archívumok olvasható forrásként megmaradnak. A teljes módban az index és csoportosítás állandó, a származtatott adatok tömörített SQLite LRU-cache-be kerülnek. Cache-kiesés nem vesz ki mapot a datasetből. Az audio minden train-felvételt egyszer választ körönként, a mapper minden train-difficultyt egyszer, dalcsoportok között váltogatva; a sorrend seedből és lépésszámból reprodukálható. Egy mapból továbbra is szakaszt tanul egy látogatáskor. A `completed_dataset_cycles` és `current_cycle_fraction` metrikák mutatják a bejárást; az időkeret lejárta nem garantál egy teljes kört. Validation/test dalok nem lesznek tanítóadatok.
+
+A régi 6315-mapos futást nem lehet ugyanazon resume alatt kibővíteni: az új teljes datasethez új audio/mapper run szükséges, külön checkpointokkal. Az új globális csoportosítás splitjei változhatnak, ezért a régi encoder nem használható automatikusan az új validáció tisztaságának ellenőrzése nélkül. A legacy fix részhalmaz mód a `--no-full-dataset` kapcsolóval érhető el. Az eredeti forrásfájlok módosulását cache-újraépítéskor ellenőrizzük. A cache lemezkerete nem tartalmazza az állandó indexet, a checkpointokat és a SQLite kis adminisztrációs többletét; szabadhelyhiánynál a származtatott adat lemezre mentés nélkül is használható.
+
+
+A generálási grammatika a körök és sliderfejek középpontját a CS szerinti sugárral a játéktéren belül tartja. Az egész slider útvonalát export előtt ellenőrzi, szükség esetén helyben legfeljebb háromszor újramintázza. A tanítás külön veszteséggel bünteti a pályán kívüli kör/sliderfej valószínűségét. Több egymást követő stack vagy oda-vissza ugrás után a dekóder logitbüntetést kap, a túl hosszú ismétlődő sorozatot a jelöltellenőrzés elveti. Rövid, tudatos ismétlések megmaradhatnak. Az értékelési riport külön jelzi a leghosszabb stack és oda-vissza szakaszt. A `styles` értékelés azonos tesztzenén, azonos seeddel külön Low/High Aim, Streams és Rhythm kimeneteket mér; a teljes panel négy referenciastílusos mapot is készít kézi playtestre. Az `evaluate --v1-run <V1 futásmappa>` kizárja a V1 tanítózenéit és a benne lévő `best.pt` fájllal ugyanazon az ismeretlen panelen V1-kimeneteket is készít.
+
+Az automatikus timing bizonytalan esetben hibát jelez. BPM/offset és külön timing referencia `.osu` fájl megadható; ezeket metronómos előnézettel kell hallásra ellenőrizni. A generálás három teljes jelöltből választ alapból, csillagértéket mér `rosu-pp-py==3.1.0` segítségével, és 0,5★ feletti eltérésnél figyelmeztet. A `.osz` export helyben importálható osu!stable-be. A valódi 12 mapos playtest és a V1–V2 azonos ismeretlen zenés összehasonlítása a tanítás után következik.
+
+Tesztelés: `python -m pytest -q`. A `tests/test_v2_*.py` a formátumot, `.osz`-ból közvetlen importot, timingot, cache-elt dekódolást, optimizer-checkpoint folytatást és az új geometriai/ismétlési szabályokat vizsgálja. A CUDA memóriapróba és a hét napos tréning **nincs lefuttatva**; ezeket te indítod a 6 GB-os GPU-n. V2 súlyok nincsenek a Git repóban.
+
+## V1 dokumentáció
+
+### Local osu! AI mapper
 
 A complete local pipeline for training an osu!standard audio-to-beatmap model from scratch. Includes a custom event tokenizer, audio cache, beat/downbeat supervision, 32.4M-parameter Transformer, training/checkpoint resume, constrained generation, difficulty calculation, `.osz` export, and a browser interface.
 
@@ -128,3 +182,15 @@ The application has no cloud publishing or automatic submission to osu!. Generat
 - [PyTorch AMP recipe](https://docs.pytorch.org/tutorials/recipes/recipes/amp_recipe.html)
 - [rosu-pp-py](https://github.com/MaxOhn/rosu-pp-py), pinned to 3.1.0 with stable difficulty settings
 - [Mapperatorinator](https://github.com/OliBomby/Mapperatorinator), related research inspiration; no weights or implementation are copied
+
+### V2 training samples from a selected song
+
+Mapper training creates a sample every 1,000 steps by default; audio-only training cannot create maps yet. Put `training-sample.json` in the run directory, or in the V2 home directory when using the standard `home/runs/name` layout:
+
+```json
+{"audio": "C:/Music/example.mp3", "stars": 5.0, "seed": 2026}
+```
+
+This selects a full-song, single-candidate preview using automatic timing and a fixed seed. It uses the frozen encoder identified by the mapper's feature manifest. Audio features are prepared once on CPU to avoid adding encoder VRAM to the active trainer, then cached across samples. Sample generation pauses optimizer updates and can take time. Outputs are under `runs/name/samples/step-N/`; invalid samples or uncertain timing produce `rejected.json` instead of a misleading export. The source audio and original maps are not modified. This song is a generation probe, not added to training, and is not necessarily unseen if already present in the dataset. Remove the selection file to restore the short validation-song preview with reference timing.
+
+During audio training, each **individual 64-second window** whose unscaled loss exceeds `1.0` is appended to `runs/name/hard_samples.csv` (UTF-8) and `loss-spikes.jsonl`. The CSV records the song and difficulty, map/set IDs, paths, time range, beat and reconstruction losses, BPM range and changes, timing point counts, and supervised beat/downbeat peak counts and densities. A detailed console block appears only for a hard window; multiple hits in one optimizer step get a short summary. CSV data is flushed after each affected step. One audio update samples several windows from one recording, so several rows may share a step. Beat targets are the prepared, masked, augmented labels; target counts are supervised local maxima above 0.5, and BPM comes from a representative map's already indexed timing points. Different difficulties can share one recording and the actual timing supervision averages compatible grids, so a CSV row does not prove its named map alone caused the loss. JSON also lists all maps tied to the recording. The `1.0` threshold is diagnostic, not a quality target. Failed mixed-precision retries are not duplicated, and diagnostics do not alter loss, weights, or sample order.
