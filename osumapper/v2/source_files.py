@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import posixpath
 import time
 import zipfile

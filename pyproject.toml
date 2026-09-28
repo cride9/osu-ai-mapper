@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "osu-ai-mapper"
 version = "0.1.0"
-description = "Train a compact, local osu!standard mapper from audio and beatmaps"
+description = "Train and run Lyra audio-to-osu!standard beatmap models locally"
 requires-python = ">=3.11,<3.13"
 dependencies = [
   "torch==2.8.0", "numpy==2.2.6", "scipy==1.15.3",
@@ -25,4 +25,7 @@ include = ["osumapper*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff.lint]
+select = ["F"]
 

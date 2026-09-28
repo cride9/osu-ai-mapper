@@ -1,7 +1,6 @@
 """Unseen-song evaluation, explicit timing modes and unfilled human quality gates."""
 from __future__ import annotations
 
-from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -13,17 +12,13 @@ from ..data import atomic_json,difficulty,load_json,style_metrics,digest
 from ..evaluation import match_events
 from ..generation import export
 from .data import records,read_cached_map
-from .dataset import AudioDataset,MapDataset
 from .generation import GenerationConfig,generate,section
 from .geometry import validate_map
-from .model import AudioEncoder,Mapper,ModelConfig
-from .runtime import device_for,gpu_session,load_checkpoint,precision_for,random_state,restore_random
+from .runtime import load_checkpoint,random_state,restore_random
 from .style import describe
 from .timing import estimate
-from .tokenizer import Tokenizer
 from .storage import local_file,parts
 from .quality import repetition_report
-from .training import TrainConfig,validate
 
 
 def _panel(frozen,split,count,exclude_groups=(),eligible_audio=None):
@@ -68,7 +63,7 @@ def evaluate(checkpoint_path,suite='full',split='test',count=32,output_dir=None,
     eligible=set(features['selected_audio']) if features and 'selected_audio' in features else None
     panel=_panel(frozen,split,count,excluded,eligible)
     if not panel: raise ValueError("No unseen songs available for this evaluation")
-    results=[]; actual=device_for(device)
+    results=[]
     if suite in ('timing','full'):
         if not features: raise ValueError("Build encoder features first")
         for row in panel:

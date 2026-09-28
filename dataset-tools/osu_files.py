@@ -36,7 +36,6 @@ from pathlib import Path as _Path
 _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import argparse
-import hashlib
 import os
 import re
 import sys
@@ -249,7 +248,6 @@ def cmd_index(db, a):
     try:
         for i, p in enumerate(files, 1):
             st = p.stat()
-            seen = db.execute("SELECT size, mtime FROM index_seen WHERE path=?", (str(p),)).fetchone()
             # Recheck partial archives even when their size/mtime is unchanged.
             try:
                 ids, unmatched = process_osz(db, p, out_root, a.allow_updated)

@@ -1,9 +1,8 @@
 import copy
-import math
 
 import pytest
 
-from osumapper.mapio import Beatmap, HitObject, TimingPoint, dumps, parse, read, write
+from osumapper.mapio import Beatmap, HitObject, TimingPoint, dumps, read, write
 from osumapper.tokenizer import Tokenizer, Grammar
 
 

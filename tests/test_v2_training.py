@@ -10,7 +10,7 @@ import torch
 from osumapper import audio,mapio
 from osumapper.data import atomic_json,digest,load_json
 from osumapper.v2 import data
-from osumapper.v2.dataset import MapDataset,collate
+from osumapper.v2.dataset import MapDataset
 from osumapper.v2.features import build_cache
 from osumapper.v2.model import AudioEncoder,ModelConfig
 from osumapper.v2.runtime import save_checkpoint,load_checkpoint

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from osumapper.mapio import Beatmap,HitObject,TimingPoint,dumps,parse
-from osumapper.v2.geometry import slider_path,validate_map,validate_object
+from osumapper.v2.geometry import slider_path,validate_object
 from osumapper.v2.tokenizer import Tokenizer,Grammar
 from osumapper.v2.style import describe,reference_code
 

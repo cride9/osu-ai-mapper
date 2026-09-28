@@ -10,7 +10,7 @@ import uuid
 from pathlib import Path
 
 from ..data import atomic_json,load_json
-from ..jobs import pid_alive,cancel_job,job_status
+from ..jobs import pid_alive
 
 
 def start_job(home,action,arguments):

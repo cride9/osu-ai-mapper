@@ -1,5 +1,4 @@
 import hashlib
-import json
 import sqlite3
 import zipfile
 from pathlib import Path
@@ -53,7 +52,7 @@ def test_selected_database_import_and_frozen_labels(tmp_path):
     set_label(dest,row['id'],{'aim':2,'streams':0,'rhythm':None})
     assert snapshot(dest,tmp_path/'run2')['snapshot_hash']!=frozen['snapshot_hash']
     assert load_json(run/'dataset.json')['labels']=={}
-    again=prepare(dbpath,root,dest,progress=lambda _:None)
+    prepare(dbpath,root,dest,progress=lambda _:None)
     assert load_json(dest/'manifest.json')['hash']==manifest['hash']
 
 

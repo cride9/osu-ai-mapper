@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import hashlib
-import os
 import posixpath
 import sqlite3
 import subprocess

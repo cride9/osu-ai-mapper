@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import gc
 import time
-from dataclasses import asdict
 from pathlib import Path
 
 import torch

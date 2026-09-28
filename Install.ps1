@@ -16,5 +16,5 @@ if ($LASTEXITCODE -ne 0) { throw 'CUDA PyTorch installation failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Pinned dependency installation failed.' }
 & '.\.venv\Scripts\python.exe' -m pip install --no-deps -e '.[test]'
 if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
-Write-Host 'Installation complete. Open Start.cmd to launch the mapper.'
+Write-Host 'Installation complete. Open StartV2.cmd to launch Lyra.'
 

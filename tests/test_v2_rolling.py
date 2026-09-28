@@ -15,8 +15,13 @@ from osumapper.v2.dataset import AudioDataset,MapDataset
 from osumapper.v2.features import build_cache
 from osumapper.v2.model import AudioEncoder,ModelConfig
 from osumapper.v2.runtime import save_checkpoint
-from osumapper.v2.rolling import RollingCache,feature_bundle
-from test_v2_training import prepared,fake_features
+from osumapper.v2.rolling import RollingCache
+from test_v2_training import fake_features,prepared as base_prepared
+
+
+@pytest.fixture
+def prepared_dataset(tmp_path):
+    return base_prepared.__wrapped__(tmp_path)
 
 
 def test_eviction_keeps_values_reproducible_and_handles_oversized_entries(tmp_path):
@@ -90,11 +95,12 @@ def test_full_import_and_mapper_use_all_maps_under_tiny_cache_budget(tmp_path):
         read_cached_map(dest,rows[0])
 
 
-def test_full_mapper_resume_preserves_weights_and_sample_order(prepared,tmp_path,monkeypatch):
+def test_full_mapper_resume_preserves_weights_and_sample_order(prepared_dataset,tmp_path,monkeypatch):
     from pathlib import Path
     from osumapper.v2 import rolling
     from osumapper.v2.runtime import load_checkpoint
     from osumapper.v2.training import train,TrainConfig
+    prepared=prepared_dataset
     m=load_json(prepared/'manifest.json')
     db=sqlite3.connect(m['index'])
     for mid,payload in db.execute('SELECT id,payload FROM records').fetchall():

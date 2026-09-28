@@ -13,7 +13,7 @@ from .. import audio,mapio
 from ..data import atomic_json,digest,difficulty,load_json,style_metrics
 from ..generation import GenerationConfig as BaseConfig, choose_settings, export
 from .data import identity,map_from_dict,records
-from .dataset import collate,phase_at,summary,slice_array
+from .dataset import phase_at,summary,slice_array
 from .features import encode_recording,load_encoder,STRIDE_MS,VERSION as FEATURE_VERSION
 from .geometry import slider_path,validate_map,validate_object
 from .model import Mapper,ModelConfig
@@ -167,7 +167,7 @@ def generate(checkpoint_path,inputs,output_dir,cfg=None,progress=print,cancelled
     if saved['stage']!='mapper': raise ValueError("Use a V2 mapper checkpoint for generation")
     frozen=load_json(checkpoint_path.parent/'dataset.json'); feature_manifest=load_json(checkpoint_path.parent/'features.json')
     if not frozen or not feature_manifest: raise ValueError("Keep dataset.json and features.json beside the checkpoint")
-    encoder,encoder_state=load_encoder(feature_manifest['encoder_checkpoint'])
+    encoder,_=load_encoder(feature_manifest['encoder_checkpoint'])
     if digest(feature_manifest['encoder_checkpoint'])!=feature_manifest['encoder_hash']: raise ValueError("Audio checkpoint identity changed")
     model=Mapper(len(Tokenizer()),ModelConfig(**saved['model_config'])); model.load_state_dict(saved['model'])
     del saved['model']; model.eval()

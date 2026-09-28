@@ -69,7 +69,6 @@ def build(home):
         dest=Path(out)/'timing-preview.wav'; dest.parent.mkdir(parents=True,exist_ok=True)
         return metronome(song,points,dest),{'mode':'manual' if bpm else 'reference','points':len(points)}
     def preview_automatic(song,checkpoint,out):
-        import numpy as np
         from .features import encode_recording,load_encoder
         from .runtime import device_for,gpu_session
         from .timing import estimate,metronome
